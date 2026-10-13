@@ -1,0 +1,11 @@
+# bot-hosting.net 免费档（512MB 硬盘）精简版依赖
+# 去掉：sentence-transformers（torch 约2GB，吃不下）、qdrant-client（代码里延迟导入，用不到）、jieba（retriever 有按字切分兜底）
+# 注意：chromadb 会连带装 kubernetes/onnxruntime 等本地用不到的包，启动命令里再卸载（见 DEPLOY.md）
+fastapi>=0.110
+uvicorn>=0.29
+openai>=1.30
+chromadb>=0.5
+pydantic>=2.0
+python-dotenv>=0.21
+requests>=2.31
+numpy>=1.26
