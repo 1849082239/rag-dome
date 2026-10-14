@@ -3,6 +3,7 @@
 启动（在项目根目录）：
     uvicorn app.main:app --reload --port 8000
 """
+import asyncio
 import json
 from contextlib import asynccontextmanager
 
@@ -73,12 +74,36 @@ def health():
     return HealthResponse(status="ok", indexed_chunks=state["store"].count())
 
 
-@app.post("/ingest", response_model=IngestResponse)
-def ingest():
-    """（重新）构建索引：读取 data/docs 下的文档 → 切分 → embedding → 入库。"""
-    result = build_index("data/docs")
-    state["retriever"] = _make_retriever(state["store"], state["embed_client"])
-    return IngestResponse(**result)
+ingest_state: dict = {"status": "idle", "detail": "", "result": None}
+
+
+def _run_ingest_sync():
+    """后台线程里跑的完整建索引流程（同步代码放线程池，避免阻塞事件循环）。"""
+    try:
+        ingest_state.update(status="running", detail="构建中：切分 → embedding → 入库", result=None)
+        result = build_index("data/docs")
+        # build_index 内部新建了自己的 store；刷新应用持有的 store 句柄，避免旧 collection 引用失效
+        state["store"] = create_vector_store(settings)
+        state["retriever"] = _make_retriever(state["store"], state["embed_client"])
+        ingest_state.update(status="done", detail=result["message"], result=result)
+    except Exception as e:  # 后台任务的异常必须自己接住并记录，否则无声失败
+        ingest_state.update(status="failed", detail=f"{type(e).__name__}: {e}", result=None)
+
+
+@app.post("/ingest", status_code=202)
+async def ingest():
+    """异步构建索引：embedding 较慢（约半分钟），为避免网关超时，后台执行、立即返回。"""
+    if ingest_state["status"] == "running":
+        raise HTTPException(status_code=409, detail="索引构建进行中，请 GET /ingest/status 查看进度")
+    ingest_state.update(status="running", detail="已启动", result=None)
+    asyncio.create_task(asyncio.to_thread(_run_ingest_sync))
+    return {"status": "started", "message": "索引构建已在后台启动，GET /ingest/status 查看进度"}
+
+
+@app.get("/ingest/status")
+def ingest_status():
+    """查询索引构建进度：idle / running / done / failed。"""
+    return ingest_state
 
 
 @app.post("/query", response_model=QueryResponse)
