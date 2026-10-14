@@ -6,10 +6,11 @@
 import asyncio
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from .config import require_api_key, settings
 from .embeddings import EmbeddingClient, create_embedding_client
@@ -72,6 +73,13 @@ def _retrieve(query: str, top_k: int) -> list[RetrievedChunk]:
 @app.get("/health", response_model=HealthResponse)
 def health():
     return HealthResponse(status="ok", indexed_chunks=state["store"].count())
+
+
+@app.get("/", include_in_schema=False)
+def index():
+    """演示页面：与 API 同源，浏览器直接打开即可用。"""
+    web_dir = Path(__file__).resolve().parent.parent / "web"
+    return FileResponse(web_dir / "demo.html")
 
 
 ingest_state: dict = {"status": "idle", "detail": "", "result": None}
