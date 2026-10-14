@@ -24,7 +24,7 @@
   <button id="btn" onclick="ask()">提问</button>
 </div>
 <script>
-const API = 'http://localhost:8000';
+const API = window.location.origin.startsWith('http') ? '' : 'http://localhost:8000';
 async function ask() {
   const input = document.getElementById('input'), btn = document.getElementById('btn');
   const chat = document.getElementById('chat');
