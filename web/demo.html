@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
 <title>RAG Demo</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
@@ -32,7 +33,7 @@ async function ask() {
   if (!q) return;
   input.value = ''; btn.disabled = true;
   chat.innerHTML += `<div class="q">${q}</div>`;
-  const aDiv = document.createElement('div'); aDiv.className = 'a'; chat.appendChild(aDiv);
+  const aDiv = document.createElement('div'); aDiv.className = 'a'; aDiv.textContent = '正在生成…'; chat.appendChild(aDiv);
   const srcDiv = document.createElement('div'); srcDiv.className = 'src'; chat.appendChild(srcDiv);
 
   const resp = await fetch(API + '/query/stream', {
@@ -54,7 +55,7 @@ async function ask() {
       if (data === '[DONE]') continue;
       try {
         const obj = JSON.parse(data);
-        if (obj.token) { aDiv.textContent += obj.token; }
+        if (obj.token) { if (aDiv.dataset.streaming !== '1') { aDiv.textContent = ''; aDiv.dataset.streaming = '1'; } aDiv.textContent += obj.token; }
         if (obj.sources) { srcDiv.textContent = '引用：' + obj.sources.map(s => `${s.source}(${s.score})`).join('、'); }
       } catch (e) { /* 忽略半包 */ }
     }
