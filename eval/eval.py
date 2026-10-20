@@ -17,10 +17,27 @@ from collections import defaultdict
 
 import requests
 
+
+def _load_dotenv():
+    here = os.path.dirname(os.path.abspath(__file__))
+    for candidate in (os.path.join(here, ".env"), os.path.join(os.getcwd(), ".env")):
+        if os.path.exists(candidate):
+            with open(candidate, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            break
+
+
+_load_dotenv()
+
 # ============ 配置区（按你的环境改） ============
 API_URL = "http://localhost:8000/api/ask"   # ai-service 地址
-USER_ID = "eval-user"                        # X-User-ID：换成你有权限的测试用户
-USER_GROUPS = "test-org"                     # X-User-Groups：换成能访问知识库的组织编码
+USER_ID = os.environ.get("USER_ID", "eval-user")      # 优先读 .env / 环境变量
+USER_GROUPS = os.environ.get("USER_GROUPS", "test-org")
 JUDGE_MODEL = "openai/gpt-oss-120b"
 PASS_SCORE = 4                               # >=4 分算通过
 # ================================================
