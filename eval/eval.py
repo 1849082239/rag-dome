@@ -16,14 +16,11 @@ import time
 from collections import defaultdict
 
 import requests
-from dotenv import load_dotenv
-
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # ============ 配置区（按你的环境改） ============
-API_URL = "http://localhost:8000/api/ask" # ai-service 地址
-USER_ID = os.environ.get("USER_ID", "") # X-User-ID：换成你有权限的测试用户
-USER_GROUPS = os.environ.get("USER_GROUPS", "") # X-User-Groups：换成能访问知识库的组织编码
+API_URL = "http://localhost:8000/api/ask"   # ai-service 地址
+USER_ID = "eval-user"                        # X-User-ID：换成你有权限的测试用户
+USER_GROUPS = "test-org"                     # X-User-Groups：换成能访问知识库的组织编码
 JUDGE_MODEL = "openai/gpt-oss-120b"
 PASS_SCORE = 4                               # >=4 分算通过
 # ================================================
@@ -58,11 +55,11 @@ def ask_system(question):
     try:
         resp = requests.post(API_URL, json={"question": question}, headers=headers, timeout=90)
         resp.raise_for_status()
-        data = resp.json().get("data") or {}
+        body = resp.json()
         return {
-            "answer": data.get("answer", ""),
-            "intent": data.get("intent", ""),
-            "references": data.get("references") or [],
+            "answer": body.get("answer", ""),
+            "intent": body.get("intent", ""),
+            "references": body.get("references") or [],
         }
     except Exception as e:
         return {"error": str(e)}
