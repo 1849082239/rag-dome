@@ -16,11 +16,14 @@ import time
 from collections import defaultdict
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # ============ 配置区（按你的环境改） ============
 API_URL = "http://localhost:8000/api/ask" # ai-service 地址
-USER_ID = "eval-user" # X-User-ID：换成你有权限的测试用户
-USER_GROUPS = "test-org" # X-User-Groups：换成能访问知识库的组织编码
+USER_ID = os.environ.get("USER_ID", "") # X-User-ID：换成你有权限的测试用户
+USER_GROUPS = os.environ.get("USER_GROUPS", "") # X-User-Groups：换成能访问知识库的组织编码
 JUDGE_MODEL = "openai/gpt-oss-120b"
 PASS_SCORE = 4 # >=4 分算通过
 # ================================================
